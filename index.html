@@ -15,12 +15,14 @@
             font-family: 'Montserrat', sans-serif;
         }
 
-        /* Запретить выделение текста по всему документу */
+        /* Запретить выделение текста по всему документу и отключить длинное нажатие на мобильных */
         html, body, * {
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             -ms-user-select: none !important;
             user-select: none !important;
+            -webkit-touch-callout: none !important; /* iOS: отключает всплывающее меню при долгом нажатии */
+            -webkit-user-drag: none !important; /* отключает перетаскивание изображений на iOS */
         }
     </style>
 </head>
@@ -549,6 +551,24 @@
 
             ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(evt => {
                 document.addEventListener(evt, block, { passive: false });
+            });
+
+            // При изменении селекции — сразу снимаем её (работает и на мобильных)
+            document.addEventListener('selectionchange', function() {
+                try {
+                    const sel = document.getSelection();
+                    if (sel && sel.rangeCount) sel.removeAllRanges();
+                } catch (err) {}
+            });
+
+            // По окончании touch-операции — снимаем возможный выбор
+            ['touchend', 'touchcancel', 'touchmove'].forEach(evt => {
+                document.addEventListener(evt, function() {
+                    try {
+                        const sel = document.getSelection();
+                        if (sel && sel.rangeCount) sel.removeAllRanges();
+                    } catch (err) {}
+                }, { passive: true });
             });
 
             document.addEventListener('keydown', function(e) {
