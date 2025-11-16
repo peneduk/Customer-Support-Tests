@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Service Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        // Lucide icons as simple components
+        const CheckCircle = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+        
+        const XCircle = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+        
+        const RotateCcw = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        );
+        
+        const Award = ({ className }) => (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+        );
+
+        const QuizApp = () => {
+          const [currentQuestion, setCurrentQuestion] = useState(0);
+          const [selectedAnswer, setSelectedAnswer] = useState(null);
+          const [showResult, setShowResult] = useState(false);
+          const [score, setScore] = useState(0);
+          const [answeredQuestions, setAnsweredQuestions] = useState([]);
+          const [quizComplete, setQuizComplete] = useState(false);
+
+          const questions = [
+            {
+              id: 1,
+              type: "scenario",
+              question: "A customer calls saying they booked a ticket 3 hours ago and want to add extra baggage. When you check the booking, the status shows 'In ticketing'. What should you advise?",
+              options: [
+                "Submit a CSF for baggage allowance immediately",
+                "Suggest the customer to cancel and rebook with baggage included",
+                "Wait until the ticket is issued, then submit CSF",
+                "Tell them it's impossible to add baggage at this stage"
+              ],
+              correct: 1,
+              explanation: "When booking status is 'In ticketing', the ticket isn't issued yet. You should suggest canceling and rebooking because CSF is only applicable AFTER the ticket is issued."
+            },
+            {
+              id: 2,
+              type: "tricky",
+              question: "A customer paid for a CSF request but the payment link expired after 125 minutes. They want to use the same payment. What's the correct action?",
+              options: [
+                "Resend the payment email - the customer can still use it",
+                "Resubmit the entire CSF form to generate a new payment link",
+                "Ask the customer to wait, the link will reactivate automatically",
+                "Process the payment manually through the system"
+              ],
+              correct: 1,
+              explanation: "If the payment link expires (after 120 minutes), you MUST resubmit the form. Resending the email won't help because the time limit cannot be renewed."
+            },
+            {
+              id: 3,
+              type: "scenario",
+              question: "Flight change scenario: You open the form and see status 'Processing' with operation notice saying 'Awaiting airline confirmation'. The customer wants to confirm the protection flight. What do you do?",
+              options: [
+                "Inform passenger they can take the rescheduled flight",
+                "Go to Confirm flight change > select pax and submit",
+                "Wait for the status to change to Complete",
+                "Contact the airline directly for confirmation"
+              ],
+              correct: 1,
+              explanation: "When status is 'Processing' and the notice does NOT say 'Passenger self-confirmed', you should treat it same as Blank status: Confirm flight change > select pax and submit."
+            },
+            {
+              id: 4,
+              type: "policy",
+              question: "Customer booked a ticket 30 minutes ago on the US site. Departure is in 10 days. They changed their mind and want a full refund. Booking status: 'Awaiting payment'. What type of cancellation applies?",
+              options: [
+                "24h special refund (USBR legislation)",
+                "Voluntary refund with cancellation fee",
+                "Simple cancellation - money back within 10 business days",
+                "Void refund"
+              ],
+              correct: 2,
+              explanation: "The booking status is 'Awaiting payment' (before ticket issuance). You can simply cancel it and they'll receive money back within 10 business days. 24h special refund requires the ticket to be issued."
+            },
+            {
+              id: 5,
+              type: "tricky",
+              question: "Which of these scenarios does NOT qualify for CSF submission?",
+              options: [
+                "Booking status: 'Tickets issued' - customer wants wheelchair service",
+                "Booking status: 'Tickets partially cancelled' - customer wants meal",
+                "Booking status: 'Awaiting payment' - customer wants extra baggage",
+                "Booking status: 'Tickets issued' - customer wants seat selection"
+              ],
+              correct: 2,
+              explanation: "CSF requires booking status to be either 'Tickets issued' or 'Tickets partially cancelled'. 'Awaiting payment' means ticket isn't issued yet, so CSF cannot be submitted."
+            },
+            {
+              id: 6,
+              type: "scenario",
+              question: "Customer calls about flight change. Status shows 'Complete' with 'RR successful' next to passenger name. What's your response?",
+              options: [
+                "Click the form and check operation notice first",
+                "Confirm flight change > select pax and submit",
+                "Inform passenger they can take the flight",
+                "Select from Customer Requests tab"
+              ],
+              correct: 2,
+              explanation: "When status is 'Complete' and it says 'RR successful' or 'Manual RR succeed' BEFORE clicking the form, you simply inform pax to take the flight. No further action needed."
+            },
+            {
+              id: 7,
+              type: "policy",
+              question: "Customer booked 18 hours ago on BR site, departure in 9 days. Ticket is issued. They want full refund and mention '24-hour rule'. What do you check?",
+              options: [
+                "If Void option is available in refund types",
+                "The voluntary cancellation policy and fees",
+                "If they contacted within 24h of booking time",
+                "If the airline allows involuntary refunds"
+              ],
+              correct: 2,
+              explanation: "For 24h special refund: 1) Booked on US/BR/KR site ✓, 2) Contact within 24h of booking (18h ✓), 3) Departure in 7+ days ✓, 4) PAX mentions legislation ✓. However, you need to verify the contact time is actually within 24h of BOOKING time."
+            },
+            {
+              id: 8,
+              type: "tricky",
+              question: "Cancellation request submitted for 'Awaiting payment' status returns outcome: 'Cancellation request submitted'. What does this mean?",
+              options: [
+                "Cancellation definitely successful",
+                "Cancellation definitely failed - ticket was issued",
+                "It could be successful OR failed - if failed, we refund per airline policy then refund cancellation fee",
+                "System error - need to resubmit"
+              ],
+              correct: 2,
+              explanation: "'Cancellation request submitted' means it's pending - could be successful or failed. If it fails, we refund the ticket per airline policy, then refund the cancellation fee to customer."
+            },
+            {
+              id: 9,
+              type: "scenario",
+              question: "Customer needs illness refund. Ticket status: 'Open for use'. What's the correct order of actions?",
+              options: [
+                "Submit cancellation > ask for documents > inform about seat cancellation",
+                "Check KH > submit cancellation > ask for documents > inform timeframe",
+                "Check KH > ask for documents > inform about seat cancellation > submit cancellation",
+                "Ask for documents > check KH > submit cancellation > inform timeframe"
+              ],
+              correct: 2,
+              explanation: "For illness refund: 1) Check KH, 2) Ask for required documents, 3) Inform about seat cancellation, 4) Then submit the cancellation form. This specific order is important."
+            },
+            {
+              id: 10,
+              type: "policy",
+              question: "Customer wants to cancel issued ticket. You find 'Void' is not available as an option. What are the possible reasons?",
+              options: [
+                "Only because the airline doesn't offer void",
+                "Only because the void deadline has passed",
+                "Either the deadline passed OR the airline doesn't offer it",
+                "System error - void should always be available"
+              ],
+              correct: 2,
+              explanation: "If 'Void' option is not available, it's either because the deadline has passed OR the airline doesn't offer it. Both reasons are possible."
+            },
+            {
+              id: 11,
+              type: "tricky",
+              question: "Flight change status 'Complete', but no 'RR successful' message. You click the form and operation notice says 'Passenger self-confirmed'. Customer asks what to do. Your answer?",
+              options: [
+                "Follow operation notice and select from Customer Requests tab",
+                "Inform passenger they can take the rescheduled flight",
+                "Submit new confirmation request",
+                "Contact airline for manual confirmation"
+              ],
+              correct: 1,
+              explanation: "Status 'Complete' without 'RR successful' → Click form → If notice says 'Passenger self-confirmed', inform pax they can take the flight. If NOT, follow operation notice and select from Customer Requests."
+            },
+            {
+              id: 12,
+              type: "scenario",
+              question: "Customer booked yesterday on Korean site, departure in 8 days. Ticket issued. They just realized they booked wrong dates and want full refund without fees. They mention 24-hour cancellation law. What's the issue?",
+              options: [
+                "Departure must be in at least 10 days",
+                "Contact time exceeded 24 hours from booking",
+                "Korean site doesn't qualify for this refund",
+                "No issue - they qualify for 24h special refund"
+              ],
+              correct: 1,
+              explanation: "They booked YESTERDAY but calling now - this likely exceeds 24h from booking time. Requirement 2 states: 'Contact time is within 24h of booking time.' Even though KR site qualifies, the timing doesn't."
+            },
+            {
+              id: 13,
+              type: "policy",
+              question: "What must you inform the customer BEFORE submitting a CSF?",
+              options: [
+                "Price, disclaimer, and payment time limit (120 minutes)",
+                "Price, refund policy, and cancellation terms",
+                "Payment time limit and airline policy only",
+                "Price and that changes take 24 hours to process"
+              ],
+              correct: 0,
+              explanation: "Before submitting CSF, inform customer about: 1) The price, 2) The relevant disclaimer, 3) The payment time limit (120 minutes). These three things are mandatory."
+            },
+            {
+              id: 14,
+              type: "scenario",
+              question: "Airline gave customer special approval for refund due to extraordinary circumstances. Customer has the email proof. How do you process this?",
+              options: [
+                "Submit as Voluntary refund with special note",
+                "Submit as Involuntary refund - Flight change",
+                "Submit as Special events refund",
+                "Contact airline first to verify the approval"
+              ],
+              correct: 2,
+              explanation: "If PAX has special approval from the airline, submit the cancellation under 'Special events refund'. This applies to any refund type where airline provided special approval."
+            },
+            {
+              id: 15,
+              type: "tricky",
+              question: "Booking status 'Not submitted', customer wants to cancel. What outcome will they receive?",
+              options: [
+                "Cancellation request submitted",
+                "Cancellation request successful",
+                "Cancellation request failed",
+                "Cannot cancel - must wait for ticket issuance"
+              ],
+              correct: 1,
+              explanation: "'Not submitted' is a pre-ticket issuance status (along with 'Awaiting payment' and 'In ticketing'). Cancellation for these statuses is typically successful, and money is refunded within 10 business days."
+            },
+            {
+              id: 16,
+              type: "scenario",
+              question: "Customer paid CSF 90 minutes ago but didn't receive confirmation. Payment link still works. What should you do?",
+              options: [
+                "Resend the payment email",
+                "Resubmit the CSF form",
+                "Wait - payment is processing",
+                "Ask customer to pay again"
+              ],
+              correct: 0,
+              explanation: "If customer wants the payment email sent again and the 120-minute limit hasn't passed (only 90 min), you can resend it. However, note that the time limit won't be renewed."
+            },
+            {
+              id: 17,
+              type: "policy",
+              question: "For 24h special refund, what if the 'Void' option is NOT available in the system?",
+              options: [
+                "Submit Involuntary refund and explain in notes",
+                "Submit Voluntary refund and tick '24h special refund' option",
+                "Contact supervisor - cannot process without Void option",
+                "Submit Special events refund"
+              ],
+              correct: 1,
+              explanation: "For 24h special refund: Submit same as void. If the option is not available, submit a Voluntary type of refund, and tick the 'USBR 24h special refund' option in the refund form."
+            },
+            {
+              id: 18,
+              type: "tricky",
+              question: "Flight change form status: 'Blank'. What does this mean and what should you do?",
+              options: [
+                "Form not yet processed - wait for it to change",
+                "Same as 'Awaiting processing' - Confirm flight change > select pax > submit",
+                "Error status - create new form",
+                "Customer hasn't made a choice yet - call them"
+              ],
+              correct: 1,
+              explanation: "Both 'Blank' and 'Awaiting processing' statuses are treated the same way: Click form number > scroll down > Confirm flight change > select pax and submit."
+            },
+            {
+              id: 19,
+              type: "scenario",
+              question: "Voluntary refund for issued ticket. System shows 'Unable to calculate refund amount'. What should you do?",
+              options: [
+                "Contact airline for manual calculation",
+                "Submit the cancellation form anyway",
+                "Ask customer to contact airline directly",
+                "Wait for system to update and calculate"
+              ],
+              correct: 1,
+              explanation: "The procedure states: 'If the system is unable to calculate, submit anyway.' You should still inform customer about the disclaimer and timeframe before submitting."
+            },
+            {
+              id: 20,
+              type: "policy",
+              question: "Which booking statuses allow you to override ticket policy and get a full refund?",
+              options: [
+                "Any status if you have airline approval",
+                "Only 'Awaiting payment' and 'Not submitted'",
+                "Any status before ticket issuance, OR any status if Void is available",
+                "Only if Void option is available"
+              ],
+              correct: 2,
+              explanation: "Full refund scenarios: 1) Before ticket issuance (Not submitted, Awaiting payment, In ticketing) - simple cancellation, OR 2) After issuance if Void is available. Void is the 'only possible way to override ticket policy' after issuance."
+            }
+          ];
+
+          const handleAnswer = (answerIndex) => {
+            setSelectedAnswer(answerIndex);
+            setShowResult(true);
+            
+            if (answerIndex === questions[currentQuestion].correct) {
+              setScore(score + 1);
+            }
+            
+            setAnsweredQuestions([...answeredQuestions, {
+              question: currentQuestion,
+              correct: answerIndex === questions[currentQuestion].correct
+            }]);
+          };
+
+          const handleNext = () => {
+            if (currentQuestion < questions.length - 1) {
+              setCurrentQuestion(currentQuestion + 1);
+              setSelectedAnswer(null);
+              setShowResult(false);
+            } else {
+              setQuizComplete(true);
+            }
+          };
+
+          const resetQuiz = () => {
+            setCurrentQuestion(0);
+            setSelectedAnswer(null);
+            setShowResult(false);
+            setScore(0);
+            setAnsweredQuestions([]);
+            setQuizComplete(false);
+          };
+
+          const getScoreMessage = () => {
+            const percentage = (score / questions.length) * 100;
+            if (percentage >= 90) return "Outstanding! You're a customer service expert! 🌟";
+            if (percentage >= 75) return "Great job! You know your policies well! 👏";
+            if (percentage >= 60) return "Good work! Review the tricky areas to improve. 📚";
+            return "Keep studying! This material is challenging but you'll get there! 💪";
+          };
+
+          if (quizComplete) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+                <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
+                  <div className="text-center">
+                    <Award className="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-yellow-500 mb-4" />
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">Quiz Complete!</h2>
+                    <div className="text-5xl sm:text-6xl font-bold text-indigo-600 mb-4">
+                      {score}/{questions.length}
+                    </div>
+                    <p className="text-lg sm:text-xl text-gray-600 mb-8">{getScoreMessage()}</p>
+                    
+                    <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-6">
+                      <h3 className="font-semibold text-base sm:text-lg mb-4 text-gray-800">Your Performance:</h3>
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 text-left">
+                        <div>
+                          <p className="text-sm sm:text-base text-gray-600">Correct Answers:</p>
+                          <p className="text-xl sm:text-2xl font-bold text-green-600">{score}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm sm:text-base text-gray-600">Incorrect Answers:</p>
+                          <p className="text-xl sm:text-2xl font-bold text-red-600">{questions.length - score}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-sm sm:text-base text-gray-600">Accuracy:</p>
+                          <p className="text-xl sm:text-2xl font-bold text-indigo-600">
+                            {Math.round((score / questions.length) * 100)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={resetQuiz}
+                      className="bg-indigo-600 text-white px-6 sm:px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2 mx-auto text-sm sm:text-base"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                      Take Quiz Again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          const currentQ = questions[currentQuestion];
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+                  <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
+                      <span className="bg-indigo-100 text-indigo-800 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold">
+                        Question {currentQuestion + 1}/{questions.length}
+                      </span>
+                      <span className="bg-green-100 text-green-800 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold">
+                        Score: {score}/{questions.length}
+                      </span>
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                      currentQ.type === 'scenario' ? 'bg-purple-100 text-purple-800' :
+                      currentQ.type === 'tricky' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {currentQ.type === 'scenario' ? '📞 Customer Scenario' :
+                       currentQ.type === 'tricky' ? '🎯 Tricky Question' :
+                       '📋 Policy Question'}
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 leading-relaxed">
+                    {currentQ.question}
+                  </h2>
+
+                  <div className="space-y-3 mb-6">
+                    {currentQ.options.map((option, index) => {
+                      const isSelected = selectedAnswer === index;
+                      const isCorrect = index === currentQ.correct;
+                      const showCorrectAnswer = showResult && isCorrect;
+                      const showWrongAnswer = showResult && isSelected && !isCorrect;
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => !showResult && handleAnswer(index)}
+                          disabled={showResult}
+                          className={`w-full p-3 sm:p-4 rounded-xl text-left text-sm sm:text-base transition-all transform hover:scale-102 ${
+                            showCorrectAnswer
+                              ? 'bg-green-100 border-2 border-green-500 text-green-900'
+                              : showWrongAnswer
+                              ? 'bg-red-100 border-2 border-red-500 text-red-900'
+                              : isSelected
+                              ? 'bg-indigo-100 border-2 border-indigo-500'
+                              : 'bg-gray-50 border-2 border-gray-200 hover:border-indigo-300'
+                          } ${showResult ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium flex-1">{option}</span>
+                            {showCorrectAnswer && <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 flex-shrink-0" />}
+                            {showWrongAnswer && <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 flex-shrink-0" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {showResult && (
+                    <div className={`p-4 sm:p-6 rounded-xl mb-6 ${
+                      selectedAnswer === currentQ.correct
+                        ? 'bg-green-50 border-l-4 border-green-500'
+                        : 'bg-red-50 border-l-4 border-red-500'
+                    }`}>
+                      <h3 className="font-bold text-base sm:text-lg mb-2 text-gray-800">
+                        {selectedAnswer === currentQ.correct ? '✅ Correct!' : '❌ Incorrect'}
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{currentQ.explanation}</p>
+                    </div>
+                  )}
+
+                  {showResult && (
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:bg-indigo-700 transition transform hover:scale-105"
+                    >
+                      {currentQuestion < questions.length - 1 ? 'Next Question →' : 'View Results 🎉'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<QuizApp />);
+    </script>
+</body>
+</html>
