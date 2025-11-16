@@ -589,5 +589,81 @@
             }, true);
         })();
     </script>
+    <!-- Защита от скриншотов: невозможно полностью запретить в браузере, но добавим меры-минимумы -->
+    <style>
+        /* Водяной знак и класс размытия при потере видимости */
+        .screenshot-watermark {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            z-index: 99999;
+            pointer-events: none;
+            opacity: 0.12;
+            font-size: 12px;
+            color: #000;
+            background: transparent;
+            mix-blend-mode: multiply;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .app-blurred {
+            filter: blur(6px) saturate(0.9);
+            transition: filter 180ms ease-in-out;
+            -webkit-filter: blur(6px) saturate(0.9);
+        }
+    </style>
+
+    <div id="screenshot-watermark" class="screenshot-watermark" aria-hidden="true"></div>
+    <script>
+        (function() {
+            // Пояснение: браузерные страницы не могут гарантированно запретить скриншоты.
+            // Лучшие практики: предотвращать копирование (сделано), динамические водяные знаки
+            // и нативная интеграция (WebView: FLAG_SECURE для Android, iOS - ограничение через native).
+
+            const wm = document.getElementById('screenshot-watermark');
+            const rootEl = document.getElementById('root');
+
+            function updateWatermark() {
+                const now = new Date();
+                const ts = now.toLocaleString();
+                const ua = (navigator.userAgent || '').split(')')[0] + ')';
+                // Можно подставить идентификатор пользователя, если есть (например, email или ID),
+                // чтобы сделать скриншоты менее пригодными для распространения.
+                const userId = '';
+                wm.textContent = (userId ? userId + ' — ' : '') + ts + ' — ' + ua;
+            }
+
+            // Обновляем часто, чтобы на скриншоте был актуальный таймстемп
+            updateWatermark();
+            setInterval(updateWatermark, 5000);
+
+            // При уходе со вкладки (например, при pull-down уведомлений) затемняем/размываем содержимое
+            document.addEventListener('visibilitychange', function() {
+                try {
+                    if (document.hidden) {
+                        rootEl.classList.add('app-blurred');
+                    } else {
+                        rootEl.classList.remove('app-blurred');
+                        updateWatermark();
+                    }
+                } catch (err) {}
+            });
+
+            // Также на мобильных: если страница теряет фокус (blur), временно скрываем или размываем
+            window.addEventListener('blur', function() {
+                try { rootEl.classList.add('app-blurred'); } catch (e) {}
+            });
+            window.addEventListener('focus', function() {
+                try { rootEl.classList.remove('app-blurred'); updateWatermark(); } catch (e) {}
+            });
+
+            // Нативные советы: если ваш сайт запускается внутри мобильного приложения (WebView):
+            // - Android: установите FLAG_SECURE на Activity (блокирует скриншоты и запись экрана).
+            // - iOS: в родном приложении можно отслеживать UIScreenCapturedDidChangeNotification
+            //   и реагировать (но прямого блокирования скриншотов нет; можно скрывать контент при записи).
+            // Подробности можно добавить, если нужно пример кода для Android/iOS.
+        })();
+    </script>
 </body>
 </html>
