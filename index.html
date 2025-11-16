@@ -10,12 +10,21 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Шрифты и запрет выделения текста */
         body {
             font-family: 'Montserrat', sans-serif;
         }
+
+        /* Запретить выделение текста по всему документу */
+        html, body, * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
     </style>
 </head>
-<body>
+<body oncopy="return false" oncut="return false" oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
     <div id="root"></div>
     
     <script type="text/babel">
@@ -529,6 +538,36 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<QuizApp />);
+    </script>
+    <!-- Скрипт для дополнительной блокировки копирования/вырезания/контекстного меню и сочетаний клавиш -->
+    <script>
+        (function() {
+            const block = (e) => {
+                try { e.preventDefault(); } catch (err) {}
+                return false;
+            };
+
+            ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(evt => {
+                document.addEventListener(evt, block, { passive: false });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                const key = (e.key || '').toLowerCase();
+                // Блокируем основные сочетания для копирования/вставки/выделения/сохранения
+                if ((e.ctrlKey || e.metaKey) && (key === 'c' || key === 'x' || key === 'a' || key === 's' || key === 'u' || key === 'p')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Блокируем F12 (инспектор) и Ctrl+Shift+I / Ctrl+Shift+J
+                if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'i' || key === 'j'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+        })();
     </script>
 </body>
 </html>
