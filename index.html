@@ -47,6 +47,16 @@
         );
 
         const QuizApp = () => {
+            // Shuffle function
+            const shuffleArray = (array) => {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            };
+
             const [currentQuestion, setCurrentQuestion] = useState(0);
             const [selectedAnswer, setSelectedAnswer] = useState(null);
             const [showResult, setShowResult] = useState(false);
@@ -54,7 +64,7 @@
             const [answeredQuestions, setAnsweredQuestions] = useState([]);
             const [quizComplete, setQuizComplete] = useState(false);
 
-            const questions = [
+            const originalQuestions = [
                 {
                     id: 1,
                     type: "scenario",
@@ -316,6 +326,21 @@
                     explanation: "Full refund scenarios: 1) Before ticket issuance (Not submitted, Awaiting payment, In ticketing) - simple cancellation, OR 2) After issuance if Void is available. Void is the 'only possible way to override ticket policy' after issuance."
                 }
             ];
+
+            // Shuffle options for each question and track correct answer index
+            const [questions] = useState(() => {
+                return originalQuestions.map(q => {
+                    const optionsWithIndex = q.options.map((opt, idx) => ({ text: opt, originalIndex: idx }));
+                    const shuffledOptions = shuffleArray(optionsWithIndex);
+                    const newCorrectIndex = shuffledOptions.findIndex(opt => opt.originalIndex === q.correct);
+                    
+                    return {
+                        ...q,
+                        options: shuffledOptions.map(opt => opt.text),
+                        correct: newCorrectIndex
+                    };
+                });
+            });
 
             const handleAnswer = (answerIndex) => {
                 setSelectedAnswer(answerIndex);
